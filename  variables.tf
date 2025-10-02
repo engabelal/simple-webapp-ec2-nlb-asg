@@ -69,9 +69,19 @@ variable "max_size" {
   type        = number
   default     = 4
 }
-
-# AMI ID for EC2 instances
 variable "ami_id" {
-  description = "AMI ID for EC2 instances (Amazon Linux 2 or Ubuntu)"
+  description = "AMI ID for EC2 instances"
   type        = string
+}
+variable "key_pair_name" {
+  description = "EC2 Key Pair name to use for SSH access"
+  type        = string
+  default     = ""
+}
+
+# Optional path to a user-data script file. Leave empty to skip user-data.
+variable "user_data_file" {
+  description = "Path to user-data file (relative to terraform root). Leave empty to disable."
+  type        = string
+  default     = ""
 }
