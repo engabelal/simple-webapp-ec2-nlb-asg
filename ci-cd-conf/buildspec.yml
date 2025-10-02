@@ -2,15 +2,24 @@ version: 0.2
 
 phases:
   install:
-    runtime-versions:
-      nodejs: 18
     commands:
-      - echo "Installing dependencies..."
-      - npm install
+      - echo "Installing Terraform..."
+      - curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip -o terraform.zip
+      - unzip terraform.zip && mv terraform /usr/local/bin/ && rm terraform.zip
+  pre_build:
+    commands:
+      - echo "Initializing Terraform..."
+      - terraform --version
+      - terraform init -input=false
   build:
     commands:
-      - echo "Build successful"
-      - ls -la
+      - echo "Planning Terraform..."
+      - terraform plan -var-file=envs/dev.tfvars -out=tfplan
+  post_build:
+    commands:
+      - echo "Applying Terraform..."
+      - terraform apply -input=false -auto-approve tfplan
+
 artifacts:
   files:
     - "**/*"
