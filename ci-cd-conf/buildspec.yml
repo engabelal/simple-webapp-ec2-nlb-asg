@@ -3,22 +3,22 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo "Installing Terraform..."
-      - curl -fsSL https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip -o terraform.zip
-      - unzip terraform.zip && mv terraform /usr/local/bin/ && rm terraform.zip
+      - echo "Installing dependencies..."
+      - yum install -y tar gzip
+
   pre_build:
     commands:
-      - echo "Initializing Terraform..."
-      - terraform --version
-      - terraform init -input=false
+      - echo "Starting pre-build step..."
+
   build:
     commands:
-      - echo "Planning Terraform..."
-      - terraform plan -var-file=envs/dev.tfvars -out=tfplan
+      - echo "Running build step..."
+      # لو عندك app (مثلاً Node.js أو React) هنا بتحط أوامر build
+      # npm install && npm run build
+
   post_build:
     commands:
-      - echo "Applying Terraform..."
-      - terraform apply -input=false -auto-approve tfplan
+      - echo "Post-build step complete."
 
 artifacts:
   files:
