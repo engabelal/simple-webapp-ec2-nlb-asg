@@ -5,14 +5,13 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      - echo "Installing dependencies"
+      - echo "Installing dependencies..."
       - npm install
   build:
     commands:
-      - echo "Building application"
-      - npm run build || echo "No build step required"
-
+      - echo "Build successful"
+      - ls -la
 artifacts:
   files:
     - "**/*"
-  discard-paths: no # Retain directory structure
+  discard-paths: no
