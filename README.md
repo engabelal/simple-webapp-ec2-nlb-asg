@@ -268,11 +268,11 @@ terraform destroy -var-file="../envs/prod.tfvars"
 
 ## 🔒 Security Best Practices
 
-✅ EC2 instances in private subnets  
-✅ No public IPs on instances  
-✅ Security groups with minimal permissions  
-✅ NAT Gateway for outbound traffic only  
-✅ Multi-AZ deployment for high availability  
+✅ EC2 instances in private subnets
+✅ No public IPs on instances
+✅ Security groups with minimal permissions
+✅ NAT Gateway for outbound traffic only
+✅ Multi-AZ deployment for high availability
 
 ## 🛠️ Customization
 
@@ -309,7 +309,7 @@ MIT License - See LICENSE file for details.
 
 ## 👤 Author
 
-**ABCloudOps**  
+**ABCloudOps**
 Infrastructure as Code Demo Project
 
 ---
