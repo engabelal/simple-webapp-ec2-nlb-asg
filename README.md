@@ -131,37 +131,61 @@ A production-ready AWS infrastructure deployed with Terraform featuring EC2 Auto
 - AWS CLI configured
 - EC2 Key Pair (optional, for SSH access)
 
-### Steps
+### Multi-Environment Support
 
-1. **Clone the repository**
+This project supports multiple environments (dev/prod) using separate `.tfvars` files:
+- `envs/dev.tfvars` - Development environment
+- `envs/prod.tfvars` - Production environment
+
+### Deploy to Development
+
 ```bash
+# Navigate to infrastructure directory
 cd infra-iac
-```
 
-2. **Initialize Terraform**
-```bash
+# Initialize Terraform
 terraform init
-```
 
-3. **Review the plan**
-```bash
+# Plan deployment
 terraform plan -var-file="../envs/dev.tfvars"
-```
 
-4. **Deploy infrastructure**
-```bash
+# Apply changes
 terraform apply -var-file="../envs/dev.tfvars"
-```
 
-5. **Get the NLB DNS name**
-```bash
+# Get outputs
 terraform output nlb_dns_name
 ```
 
-6. **Access the application**
+### Deploy to Production
+
 ```bash
-curl http://<nlb-dns-name>
+# Navigate to infrastructure directory
+cd infra-iac
+
+# Initialize Terraform (if not done)
+terraform init
+
+# Plan deployment
+terraform plan -var-file="../envs/prod.tfvars"
+
+# Apply changes
+terraform apply -var-file="../envs/prod.tfvars"
+
+# Get outputs
+terraform output nlb_dns_name
+```
+
+### Access the Application
+
+```bash
+# Get the NLB DNS name
+NLB_DNS=$(terraform output -raw nlb_dns_name)
+
+# Test the application
+curl http://$NLB_DNS
+
 # Or open in browser
+echo "http://$NLB_DNS"
 ```
 
 ## ⚙️ Configuration
@@ -221,8 +245,16 @@ aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names <asg-nam
 
 ## 🧹 Cleanup
 
+### Destroy Development Environment
 ```bash
+cd infra-iac
 terraform destroy -var-file="../envs/dev.tfvars"
+```
+
+### Destroy Production Environment
+```bash
+cd infra-iac
+terraform destroy -var-file="../envs/prod.tfvars"
 ```
 
 ## 📊 Cost Estimation
