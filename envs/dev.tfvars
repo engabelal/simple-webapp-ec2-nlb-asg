@@ -7,4 +7,4 @@ private_subnets = ["10.0.3.0/24", "10.0.4.0/24"]
 azs             = ["eu-north-1a", "eu-north-1b"]
 user_data_file  = "userdata/bootstrap.sh" # Path to your user data script
 ami_id          = "ami-04c08fd8aa14af291"
-key_pair_name   = "devops90-cli-key1"
+key_pair_name   = "devops90-cli-key" # Replace with your actual key pair name
