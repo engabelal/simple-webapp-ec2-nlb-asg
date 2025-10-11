@@ -4,7 +4,8 @@ Production-ready AWS infrastructure with EC2 Auto Scaling, Network Load Balancer
 
 ![Terraform](https://img.shields.io/badge/Terraform-1.8+-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![Apache](https://img.shields.io/badge/Apache-D22128?style=for-the-badge&logo=apache&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20-green?style=for-the-badge&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.18-000000?style=for-the-badge&logo=express&logoColor=white)
 ![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)
 
 ---
@@ -38,7 +39,7 @@ terraform output nlb_dns_name
 | 🔒 **Private Subnets** | EC2 instances isolated from internet |
 | 🌐 **NAT Gateway per AZ** | Redundant outbound internet access |
 | 📦 **Multi-Environment** | Separate dev/prod configurations |
-| 🛡️ **Security Groups** | Minimal permissions, port 80 only |
+| 🛡️ **Security Groups** | Minimal permissions, port 3000 only |
 
 ---
 
@@ -59,7 +60,7 @@ terraform output nlb_dns_name
 
 ### Web Application
 ![Web Application Result](images/result.png)
-*Apache web server displaying instance metadata (ID, AZ, Region) and infrastructure components*
+*Node.js/Express server displaying instance metadata (ID, AZ, Region) and infrastructure components*
 
 ---
 
@@ -94,7 +95,7 @@ terraform output nlb_dns_name
 │                   │                                 │
 │  ┌────────────────┴───────────────────────────┐    │
 │  │   Network Load Balancer (Internet-facing)  │    │
-│  │            Port 80 (TCP)                   │    │
+│  │            Port 3000 (TCP)                 │    │
 │  └────────────────┬───────────────────────────┘    │
 │                   │                                 │
 │  ┌────────────────┴───────────────────────────┐    │
@@ -106,8 +107,8 @@ terraform output nlb_dns_name
 │  │  │              │    │              │     │    │
 │  │  │ ┌──────────┐ │    │ ┌──────────┐ │     │    │
 │  │  │ │   EC2    │ │    │ │   EC2    │ │     │    │
-│  │  │ │ Apache   │ │    │ │ Apache   │ │     │    │
-│  │  │ │ Port 80  │ │    │ │ Port 80  │ │     │    │
+│  │  │ │ Node.js  │ │    │ │ Node.js  │ │     │    │
+│  │  │ │ Port 3000│ │    │ │ Port 3000│ │     │    │
 │  │  │ └──────────┘ │    │ └──────────┘ │     │    │
 │  │  └──────┬───────┘    └──────┬───────┘     │    │
 │  │         │                   │              │    │
@@ -160,8 +161,12 @@ EC2 (Private Subnets) → NAT Gateway (per AZ) → IGW → Internet
 <td>Network Load Balancer (Layer 4)</td>
 </tr>
 <tr>
-<td><b>Web Server</b></td>
-<td>Apache HTTP Server</td>
+<td><b>Runtime</b></td>
+<td>Node.js 20.x</td>
+</tr>
+<tr>
+<td><b>Framework</b></td>
+<td>Express.js 4.18</td>
 </tr>
 <tr>
 <td><b>Scripting</b></td>
@@ -193,8 +198,6 @@ simple-webapp-ec2-nlb-asg/
 │   └── prod.tfvars          # Production config
 ├── userdata/
 │   └── bootstrap.sh         # EC2 initialization script
-├── scripts/
-│   └── start.sh             # Deployment helper
 ├── images/
 │   └── result.png           # Screenshot
 └── README.md
@@ -347,8 +350,8 @@ terraform destroy -var-file="../envs/dev.tfvars"
 
 | Issue | Solution |
 |-------|----------|
-| **NLB not accessible** | • Check security group allows port 80<br>• Verify target health in AWS Console<br>• Wait 2-3 minutes for NLB to be active |
-| **Instances unhealthy** | • Check user data script logs: `/var/log/cloud-init-output.log`<br>• Verify Apache is running: `systemctl status httpd`<br>• Check security group allows NLB traffic |
+| **NLB not accessible** | • Check security group allows port 3000<br>• Verify target health in AWS Console<br>• Wait 2-3 minutes for NLB to be active |
+| **Instances unhealthy** | • Check user data script logs: `/var/log/user-data.log`<br>• Verify Node.js app is running: `systemctl status nodejs-app`<br>• Check security group allows NLB traffic on port 3000 |
 | **Terraform state locked** | `terraform force-unlock <LOCK_ID>` |
 | **AMI not found** | Update `ami_id` in tfvars for your region |
 | **NAT Gateway timeout** | • Check route tables<br>• Verify NAT GW has Elastic IP<br>• Check NACL rules |
@@ -445,7 +448,7 @@ AZ-1b: EC2 → NAT GW (AZ-1b) → Internet ✅
 
 ### Security
 - **Security Group**: Firewall rules
-  - Inbound: Port 80 from anywhere
+  - Inbound: Port 3000 from anywhere
   - Outbound: All traffic allowed
 
 </details>
@@ -456,9 +459,11 @@ AZ-1b: EC2 → NAT GW (AZ-1b) → Internet ✅
 ### Implemented
 - ✅ EC2 instances in private subnets
 - ✅ No public IPs on instances
-- ✅ Security groups with minimal permissions
+- ✅ Security groups with minimal permissions (port 3000 only)
 - ✅ NAT Gateway for outbound only
 - ✅ Multi-AZ for high availability
+- ✅ Non-privileged port (3000) for Node.js
+- ✅ Systemd service for auto-restart
 
 ### Recommended Additions
 - 🔄 Enable VPC Flow Logs

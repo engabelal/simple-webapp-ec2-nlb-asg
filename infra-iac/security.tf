@@ -5,16 +5,16 @@ resource "aws_security_group" "ec2_sg" {
 
   ingress {
     description = "Allow HTTP from anywhere"
-    from_port   = 80
-    to_port     = 80
+    from_port   = 3000
+    to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     description = "Allow inbound from same SG"
-    from_port   = 80
-    to_port     = 80
+    from_port   = 3000
+    to_port     = 3000
     protocol    = "tcp"
     self        = true
   }

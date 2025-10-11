@@ -7,19 +7,57 @@ exec 2>&1
 
 echo "Starting bootstrap at $(date)"
 
-# Install and start Apache
+# Update system
 yum update -y
-yum install -y httpd
-systemctl enable httpd
-systemctl start httpd
+
+# Install Node.js 20.x
+curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+yum install -y nodejs
+
+# Verify installation
+node --version
+npm --version
 
 # Get instance metadata
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 AVAIL_ZONE=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
 REGION=${AVAIL_ZONE::-1}
 
-# Create demo HTML page
-cat << EOF | tee /var/www/html/index.html
+# Create app directory
+mkdir -p /home/ec2-user/app
+cd /home/ec2-user/app
+
+# Create package.json
+cat << 'EOF' > package.json
+{
+  "name": "abcloudops-demo",
+  "version": "1.0.0",
+  "description": "ABCloudOps AWS Infrastructure Demo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Ahmed Belal - ABCloudOps",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+EOF
+
+# Create Node.js server
+cat << EOF > server.js
+const express = require('express');
+const app = express();
+const PORT = 3000;
+
+// Instance metadata
+const INSTANCE_ID = '${INSTANCE_ID}';
+const AVAIL_ZONE = '${AVAIL_ZONE}';
+const REGION = '${REGION}';
+
+app.get('/', (req, res) => {
+  res.send(\`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,6 +109,15 @@ cat << EOF | tee /var/www/html/index.html
       max-width: 700px;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
     }
+    .badge {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin-left: 8px;
+    }
     footer {
       margin-top: 60px;
       font-size: 0.9rem;
@@ -80,13 +127,14 @@ cat << EOF | tee /var/www/html/index.html
 </head>
 <body>
   <div class="card">
-    <h1>🚀 ABCloudOps AWS Demo</h1>
+    <h1>🚀 ABCloudOps AWS Demo <span class="badge">Node.js</span></h1>
     <h2>Infrastructure built automatically using Terraform</h2>
 
     <p style="background: rgba(56,189,248,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #38bdf8;">
-      <b>Instance ID:</b> $INSTANCE_ID<br>
-      <b>Availability Zone:</b> $AVAIL_ZONE<br>
-      <b>Region:</b> $REGION
+      <b>Instance ID:</b> \${INSTANCE_ID}<br>
+      <b>Availability Zone:</b> \${AVAIL_ZONE}<br>
+      <b>Region:</b> \${REGION}<br>
+      <b>Runtime:</b> Node.js \${process.version}
     </p>
 
     <p>
@@ -99,12 +147,12 @@ cat << EOF | tee /var/www/html/index.html
       <li>☁️ <b>VPC</b> — defines the network boundary for all resources.</li>
       <li>🌐 <b>Public & Private Subnets</b> — separate layers for web and app tiers.</li>
       <li>🚪 <b>Internet Gateway</b> — enables public internet access.</li>
-      <li>🔄 <b>NAT Gateway</b> — allows private instances outbound access securely.</li>
+      <li>🔄 <b>NAT Gateway per AZ</b> — allows private instances outbound access securely.</li>
       <li>🛡️ <b>Security Groups</b> — manage inbound/outbound rules.</li>
       <li>🖥️ <b>Launch Template</b> — defines EC2 configuration and bootstrap.</li>
       <li>⚙️ <b>Auto Scaling Group</b> — maintains instance count automatically.</li>
       <li>🔁 <b>Network Load Balancer</b> — distributes incoming traffic.</li>
-      <li>🧰 <b>User Data</b> — installs Apache and serves this page.</li>
+      <li>🧰 <b>User Data</b> — installs Node.js and serves this page.</li>
       <li>📦 <b>Terraform Variables</b> — parameterize environment configurations.</li>
     </ul>
 
@@ -115,10 +163,73 @@ cat << EOF | tee /var/www/html/index.html
   </div>
 
   <footer>
-    © 2025 ABCloudOps | Infrastructure as Code Demo
+    © 2025 ABCloudOps | Infrastructure as Code Demo | Powered by Node.js
   </footer>
 </body>
 </html>
+  \`);
+});
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    instance: INSTANCE_ID,
+    zone: AVAIL_ZONE,
+    region: REGION,
+    uptime: process.uptime()
+  });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(\`Server running on port \${PORT}\`);
+  console.log(\`Instance: \${INSTANCE_ID}\`);
+  console.log(\`Zone: \${AVAIL_ZONE}\`);
+});
 EOF
+
+# Install dependencies
+npm install
+
+# Set ownership
+chown -R ec2-user:ec2-user /home/ec2-user/app
+
+# Create systemd service
+cat << 'EOF' > /etc/systemd/system/nodejs-app.service
+[Unit]
+Description=ABCloudOps Node.js Demo App
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/app
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nodejs-app
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start service
+systemctl daemon-reload
+systemctl enable nodejs-app
+systemctl start nodejs-app
+
+# Wait for app to start
+sleep 5
+
+# Check if app is running
+if systemctl is-active --quiet nodejs-app; then
+  echo "✅ Node.js app started successfully"
+  systemctl status nodejs-app
+else
+  echo "❌ Failed to start Node.js app"
+  journalctl -u nodejs-app -n 50
+  exit 1
+fi
 
 echo "Bootstrap completed successfully at $(date)"
