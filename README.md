@@ -198,8 +198,6 @@ simple-webapp-ec2-nlb-asg/
 │   └── prod.tfvars          # Production config
 ├── userdata/
 │   └── bootstrap.sh         # EC2 initialization script
-├── scripts/
-│   └── start.sh             # Deployment helper
 ├── images/
 │   └── result.png           # Screenshot
 └── README.md
