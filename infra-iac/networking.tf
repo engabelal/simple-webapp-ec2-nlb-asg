@@ -47,30 +47,35 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# NAT Gateway + Private Route Table
+# Elastic IP for each NAT Gateway
 resource "aws_eip" "nat" {
+  count  = length(var.public_subnets)
   domain = "vpc"
-  tags   = { Name = "${var.project_name}-${var.environment}-nat-eip" }
+  tags   = { Name = "${var.project_name}-${var.environment}-nat-eip-${count.index + 1}" }
 }
 
+# NAT Gateway per public subnet (one per AZ)
 resource "aws_nat_gateway" "this" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
+  count         = length(var.public_subnets)
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
   depends_on    = [aws_internet_gateway.this]
-  tags          = { Name = "${var.project_name}-${var.environment}-natgw" }
+  tags          = { Name = "${var.project_name}-${var.environment}-natgw-${count.index + 1}" }
 }
 
+# Private route table per AZ (linked to matching NAT Gateway)
 resource "aws_route_table" "private" {
+  count  = length(var.private_subnets)
   vpc_id = aws_vpc.this.id
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.this.id
+    nat_gateway_id = aws_nat_gateway.this[count.index].id
   }
-  tags = { Name = "${var.project_name}-${var.environment}-private-rt" }
+  tags = { Name = "${var.project_name}-${var.environment}-private-rt-${count.index + 1}" }
 }
 
 resource "aws_route_table_association" "private" {
-  count          = length(aws_subnet.private)
+  count          = length(var.private_subnets)
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private[count.index].id
 }
